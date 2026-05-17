@@ -11,11 +11,6 @@ DB_PATH = os.path.join(os.path.dirname(__file__), "..", "database", "ideas.db")
 
 
 async def init_db() -> None:
-    """
-    Инициализирует базу данных: создаёт таблицу ideas, если её нет.
-    Вызывается один раз при старте бота.
-    """
-    # Создаём директорию database/, если её нет
     db_dir = os.path.dirname(DB_PATH)
     os.makedirs(db_dir, exist_ok=True)
 

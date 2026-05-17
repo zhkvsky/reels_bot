@@ -23,8 +23,6 @@ logger = logging.getLogger(__name__)
 
 
 async def main() -> None:
-    """Главная асинхронная функция запуска бота."""
-
     bot_token = os.getenv("BOT_TOKEN")
     if not bot_token:
         logger.error("BOT_TOKEN не найден в переменных окружения!")
@@ -46,7 +44,6 @@ async def main() -> None:
 
     dp = Dispatcher()
 
-    # Подключаем роутеры
     dp.include_router(start_router)
     dp.include_router(idea_router)
 

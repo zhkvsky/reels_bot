@@ -53,7 +53,7 @@ async def handle_idea_request(message: Message) -> None:
     try:
         recent_ideas = await get_recent_ideas(limit=30)
         logger.info(
-            f"Передаю в Gemini {len(recent_ideas)} предыдущих идей как контекст."
+            f"Передаю {len(recent_ideas)} предыдущих идей как контекст."
         )
 
         idea_text = await generate_idea(previous_ideas=recent_ideas)
