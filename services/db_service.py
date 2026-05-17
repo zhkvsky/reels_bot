@@ -1,8 +1,3 @@
-"""
-services/db_service.py — работа с базой данных SQLite.
-Использует aiosqlite для асинхронных операций.
-"""
-
 import logging
 import os
 from typing import List
@@ -37,15 +32,6 @@ async def init_db() -> None:
 
 
 async def save_idea(content: str) -> int:
-    """
-    Сохраняет новую идею в базу данных.
-
-    Args:
-        content: Текст идеи.
-
-    Returns:
-        id вставленной записи.
-    """
     async with aiosqlite.connect(DB_PATH) as db:
         cursor = await db.execute(
             "INSERT INTO ideas (content) VALUES (?)",
@@ -58,15 +44,6 @@ async def save_idea(content: str) -> int:
 
 
 async def get_recent_ideas(limit: int = 30) -> List[str]:
-    """
-    Возвращает последние `limit` идей из базы данных.
-
-    Args:
-        limit: Максимальное количество идей.
-
-    Returns:
-        Список строк с текстами идей (от новых к старым).
-    """
     async with aiosqlite.connect(DB_PATH) as db:
         cursor = await db.execute(
             "SELECT content FROM ideas ORDER BY id DESC LIMIT ?",
@@ -80,7 +57,6 @@ async def get_recent_ideas(limit: int = 30) -> List[str]:
 
 
 async def get_ideas_count() -> int:
-    """Возвращает общее количество идей в базе данных."""
     async with aiosqlite.connect(DB_PATH) as db:
         cursor = await db.execute("SELECT COUNT(*) FROM ideas")
         row = await cursor.fetchone()

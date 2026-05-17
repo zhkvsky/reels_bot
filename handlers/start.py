@@ -1,8 +1,3 @@
-"""
-handlers/start.py — обработчик команды /start.
-Приветствует пользователя и показывает главное меню.
-"""
-
 from aiogram import Router
 from aiogram.filters import CommandStart
 from aiogram.types import Message
@@ -14,7 +9,6 @@ router = Router()
 
 @router.message(CommandStart())
 async def cmd_start(message: Message) -> None:
-    """Обработчик команды /start — приветствие и показ клавиатуры."""
 
     user_name = message.from_user.full_name if message.from_user else "друг"
 

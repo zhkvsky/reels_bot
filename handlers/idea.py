@@ -1,8 +1,3 @@
-"""
-handlers/idea.py — обработчик генерации идей.
-Включает защиту от спама, вызов Gemini API и сохранение в БД.
-"""
-
 import logging
 import time
 from typing import Dict
@@ -13,7 +8,7 @@ from aiogram.types import Message
 
 from keyboards.main_keyboard import get_main_keyboard
 from services.db_service import get_recent_ideas, save_idea
-from services.gemini_service import generate_idea
+from services.service import generate_idea
 
 logger = logging.getLogger(__name__)
 router = Router()
@@ -26,10 +21,6 @@ RATE_LIMIT_SECONDS = 5
 
 
 def _is_rate_limited(user_id: int) -> float:
-    """
-    Проверяет, не превышен ли лимит запросов.
-    Возвращает 0 если запрос разрешён, иначе — сколько секунд осталось ждать.
-    """
     now = time.monotonic()
     last = _last_request.get(user_id, 0)
     elapsed = now - last
@@ -39,18 +30,12 @@ def _is_rate_limited(user_id: int) -> float:
 
 
 def _update_rate_limit(user_id: int) -> None:
-    """Обновляет временну́ю метку последнего запроса пользователя."""
     _last_request[user_id] = time.monotonic()
 
 
 async def handle_idea_request(message: Message) -> None:
-    """
-    Общая логика генерации идеи.
-    Вызывается как из /idea, так и из нажатия кнопки.
-    """
     user_id = message.from_user.id if message.from_user else 0
 
-    # --- Защита от спама ---
     wait_seconds = _is_rate_limited(user_id)
     if wait_seconds > 0:
         await message.answer(
@@ -60,32 +45,26 @@ async def handle_idea_request(message: Message) -> None:
 
     _update_rate_limit(user_id)
 
-    # --- Индикатор загрузки ---
     thinking_msg = await message.answer(
         "🧠 Генерирую уникальную идею для вашего ролика...\n"
         "<i>Это займёт несколько секунд</i>"
     )
 
     try:
-        # --- Получаем последние идеи из БД для контекста ---
         recent_ideas = await get_recent_ideas(limit=30)
         logger.info(
             f"Передаю в Gemini {len(recent_ideas)} предыдущих идей как контекст."
         )
 
-        # --- Генерируем идею через Gemini ---
         idea_text = await generate_idea(previous_ideas=recent_ideas)
 
-        # --- Сохраняем в БД ---
         await save_idea(idea_text)
         logger.info("Идея успешно сохранена в БД.")
 
-        # --- Удаляем сообщение-заглушку ---
         await thinking_msg.delete()
 
-        # --- Отправляем результат ---
         # Telegram ограничивает сообщение до 4096 символов.
-        # Если идея длиннее — разбиваем на части.
+        # Если идея длиннее - разбиваем на части.
         max_length = 4000  # чуть меньше лимита, с запасом
         chunks = [
             idea_text[i : i + max_length]
@@ -94,7 +73,6 @@ async def handle_idea_request(message: Message) -> None:
 
         for idx, chunk in enumerate(chunks):
             if idx == len(chunks) - 1:
-                # Последний (или единственный) кусок — с клавиатурой
                 await message.answer(
                     text=chunk,
                     reply_markup=get_main_keyboard(),
@@ -102,26 +80,36 @@ async def handle_idea_request(message: Message) -> None:
             else:
                 await message.answer(text=chunk)
 
+    except ValueError as e:
+        logger.error(f"Ошибка генерации: {e}")
+        await thinking_msg.delete()
+        err = str(e)
+        if "rate" in err.lower() or "429" in err or "недоступно" in err:
+            user_msg = (
+                "⏳ <b>Модель временно перегружена.</b>\n\n"
+                "OpenRouter ограничил бесплатный доступ — это норма в часы пик.\n"
+                "Подожди <b>1–2 минуты</b> и попробуй снова. 🙏"
+            )
+        else:
+            user_msg = (
+                f"❌ <b>Ошибка генерации.</b>\n\n<i>{err[:300]}</i>"
+            )
+        await message.answer(user_msg, reply_markup=get_main_keyboard())
+
     except Exception as e:
-        logger.exception(f"Ошибка при генерации идеи: {e}")
+        logger.exception(f"Неожиданная ошибка: {e}")
         await thinking_msg.delete()
         await message.answer(
-            "❌ <b>Произошла ошибка при генерации идеи.</b>\n\n"
-            "Попробуй ещё раз через несколько секунд.\n"
-            f"<i>Детали: {str(e)[:200]}</i>",
+            "❌ <b>Что-то пошло не так.</b>\n\nПопробуй ещё раз.",
             reply_markup=get_main_keyboard(),
         )
 
 
-# --- Обработчик команды /idea ---
 @router.message(Command("idea"))
 async def cmd_idea(message: Message) -> None:
-    """Обработчик команды /idea."""
     await handle_idea_request(message)
 
 
-# --- Обработчик нажатия кнопки ---
 @router.message(F.text == "🎬 Сгенерировать идею")
 async def btn_idea(message: Message) -> None:
-    """Обработчик нажатия кнопки 'Сгенерировать идею'."""
     await handle_idea_request(message)

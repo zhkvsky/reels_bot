@@ -12,12 +12,10 @@ from handlers.start import router as start_router
 from handlers.idea import router as idea_router
 from services.db_service import init_db
 
-# Загружаем переменные окружения из .env
 load_dotenv()
 
-# Настройка логирования
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     handlers=[logging.StreamHandler(sys.stdout)],
 )
@@ -25,28 +23,27 @@ logger = logging.getLogger(__name__)
 
 
 async def main() -> None:
+    """Главная асинхронная функция запуска бота."""
+
     bot_token = os.getenv("BOT_TOKEN")
     if not bot_token:
         logger.error("BOT_TOKEN не найден в переменных окружения!")
         sys.exit(1)
 
-    gemini_key = os.getenv("GEMINI_API_KEY")
-    if not gemini_key:
-        logger.error("GEMINI_API_KEY не найден в переменных окружения!")
+    openrouter_key = os.getenv("OPENROUTER_API_KEY")
+    if not openrouter_key:
+        logger.error("OPENROUTER_API_KEY не найден в переменных окружения!")
         sys.exit(1)
 
-    # Инициализируем базу данных
     logger.info("Инициализация базы данных...")
     await init_db()
     logger.info("База данных готова.")
 
-    # Создаём экземпляр бота с HTML parse mode по умолчанию
     bot = Bot(
         token=bot_token,
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),
     )
 
-    # Создаём диспетчер
     dp = Dispatcher()
 
     # Подключаем роутеры

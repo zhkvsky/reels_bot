@@ -1,4 +1,4 @@
 aiogram~=3.28.2
 python-dotenv~=1.2.2
-protobuf~=7.34.1
+httpx~=0.28.1
 aiosqlite~=0.22.1
