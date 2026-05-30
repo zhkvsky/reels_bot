@@ -31,7 +31,7 @@ async def generate_idea(previous_ideas: List[str]) -> str:
         "messages": [{"role": "user", "content": prompt}],
         "temperature": 0.5, # чем ниже температура - тем формальнее ответ
         "top_p": 0.8,
-        "max_tokens": 2048,
+        "max_tokens": 8192,
     }
 
     logger.info(f"Запрос к OpenRouter (модель: {MODEL})...")

@@ -5,7 +5,7 @@ def build_prompt(previous_ideas: List[str]) -> str:
     if previous_ideas:
         ideas_block = "УЖЕ ИСПОЛЬЗОВАННЫЕ ИДЕИ (не повторяй тему и формат):\n"
         for idx, idea in enumerate(previous_ideas, start=1):
-            short = idea[:150].replace("\n", " ").strip()
+            short = idea[:500].replace("\n", " ").strip()
             ideas_block += f"{idx}. {short}\n"
     else:
         ideas_block = "Предыдущих идей нет — это первая генерация.\n"
